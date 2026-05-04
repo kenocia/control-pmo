@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kenocia PMO - Centro de Mando Operativo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+
+        body {
+            background-color: #fcfaf8;
+            /* Neutro cálido */
+            color: #1e293b;
+            font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+        }
+
+        .odoo-purple {
+            color: #714B67;
+        }
+
+        .odoo-purple-bg {
+            background-color: #714B67;
+        }
+
+        .odoo-teal {
+            color: #01A4A5;
+        }
+
+        .odoo-teal-bg {
+            background-color: #01A4A5;
+        }
+
+        .gantt-grid {
+            display: grid;
+            grid-template-columns: 120px repeat(11, 1fr);
+            gap: 6px;
+        }
+
+        .gantt-header {
+            font-size: 0.7rem;
+            text-align: center;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 9999px;
+            display: inline-block;
+            margin-right: 6px;
+        }
+    </style>
+    <!-- Chosen Palette: Odoo Harmony (Plum #714B67, Teal #01A4A5, Warm Neutral Background #fcfaf8) -->
+    <!-- Application Structure Plan: He diseñado esta SPA con una arquitectura de "Mando Centralizado". El usuario navega a través de tres áreas críticas: 1. Estado Inmediato (KPIs y Tabla de Control), 2. Visualización Temporal (Gantt Interactivo), y 3. Inteligencia de Recursos (Carga de Trabajo). He elegido esta estructura porque un PMO Senior necesita priorizar la toma de decisiones basada en la saturación del equipo y los Go-Lives inminentes de la semana. -->
+    <!-- Visualization & Content Choices: 1. KPIs: Bloques de texto dinámicos para impacto visual inmediato. 2. Seguimiento: Tabla interactiva con filtros para gestión de excepciones. 3. Línea de Tiempo: Cronograma estilo Gantt construido con CSS Grid para evitar dependencias pesadas. 4. Carga Laboral: Gráfico de barras apiladas mediante Chart.js para visualizar el balance entre proyectos actuales y futuros. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+
+<body class="antialiased min-h-screen flex flex-col">
+
+    <!-- Navegación -->
+    <nav class="bg-white border-b-2 border-gray-100 shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 flex items-center gap-3">
+                        <div class="p-2 odoo-purple-bg rounded-lg">
+                            <div class="w-6 h-6 border-2 border-white rounded-sm"></div>
+                        </div>
+                        <div>
+                            <span class="text-2xl font-black tracking-tight text-gray-900">KENOCIA</span>
+                            <p class="text-[10px] font-bold uppercase tracking-widest odoo-teal">High-End Technology</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="hidden md:flex items-center space-x-2">
+                    <button onclick="nav('tablero')" id="btn-tablero"
+                        class="nav-btn px-4 py-2 rounded-lg text-sm font-semibold odoo-purple-bg text-white shadow-md transition-all">Control
+                        General</button>
+                    <button onclick="nav('equipo')" id="btn-equipo"
+                        class="nav-btn px-4 py-2 rounded-lg text-sm font-semibold text-gray-500 hover:bg-gray-50 transition-all">Análisis
+                        de Equipo</button>
+                    <button onclick="nav('estrategia')" id="btn-estrategia"
+                        class="nav-btn px-4 py-2 rounded-lg text-sm font-semibold text-gray-500 hover:bg-gray-50 transition-all">Backlog
+                        & Riesgos</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
+
+        <!-- SECCIÓN 1: TABLERO GENERAL -->
+        <div id="view-tablero" class="view-section animate-in fade-in duration-500">
+            <header class="mb-10">
+                <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">Estado de Implementaciones Odoo</h1>
+                <p class="text-gray-600 mt-3 text-lg max-w-3xl">
+                    Este panel centraliza el progreso de las implementaciones activas en Kenocia. Aquí monitoreamos los
+                    **hitos críticos** y los estados de salud de cada proyecto, permitiendo identificar cuellos de
+                    botella antes de que afecten los plazos de salida en vivo (Go-Live).
+                </p>
+            </header>
+
+            <!-- KPIs -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+                <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Proyectos Totales</h3>
+                    <div class="flex items-end gap-2 mt-2">
+                        <p class="text-4xl font-black text-gray-900">5</p>
+                        <p class="text-xs text-green-600 font-bold mb-1">↑ 100% Odoo</p>
+                    </div>
+                    <p class="text-[10px] text-gray-400 mt-2 italic">Basado en implementaciones Python/Odoo.</p>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Alertas Críticas</h3>
+                    <div class="flex items-end gap-2 mt-2">
+                        <p class="text-4xl font-black text-red-600">3</p>
+                        <p class="text-xs text-red-500 font-bold mb-1">Go-Live Inminente</p>
+                    </div>
+                    <p class="text-[10px] text-gray-400 mt-2 italic">Requieren atención de soporte presencial.</p>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Semanas para EmsoInd</h3>
+                    <div class="flex items-end gap-2 mt-2">
+                        <p class="text-4xl font-black odoo-purple">4</p>
+                        <p class="text-xs text-purple-400 font-bold mb-1">Días restantes</p>
+                    </div>
+                    <p class="text-[10px] text-gray-400 mt-2 italic">Fecha objetivo: 29 de Mayo.</p>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Hito Sycom</h3>
+                    <div class="flex items-end gap-2 mt-2">
+                        <p class="text-2xl font-black text-orange-500">4 Mayo</p>
+                    </div>
+                    <p class="text-[10px] text-gray-400 mt-2 italic">Decisión crítica hoy.</p>
+                </div>
+            </div>
+
+            <!-- Tabla Interactiva -->
+            <div class="bg-white shadow-xl rounded-2xl mb-12 overflow-hidden border border-gray-100">
+                <div
+                    class="px-8 py-5 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center bg-gray-50/50 gap-4">
+                    <div>
+                        <h2 class="text-xl font-extrabold text-gray-800">Seguimiento por Proyecto</h2>
+                        <p class="text-xs text-gray-500">Haz clic en los estados para filtrar la vista.</p>
+                    </div>
+                    <div class="flex bg-white p-1 rounded-xl shadow-sm border border-gray-200">
+                        <button onclick="filterTable('all')"
+                            class="text-[10px] px-4 py-2 rounded-lg hover:bg-gray-100 font-bold uppercase transition-all">Todos</button>
+                        <button onclick="filterTable('Crítico')"
+                            class="text-[10px] px-4 py-2 rounded-lg text-red-700 bg-red-50 font-bold uppercase transition-all">Críticos</button>
+                        <button onclick="filterTable('En Proceso')"
+                            class="text-[10px] px-4 py-2 rounded-lg text-yellow-700 bg-yellow-50 font-bold uppercase transition-all">Proceso</button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-100">
+                        <thead class="bg-gray-50/50">
+                            <tr>
+                                <th
+                                    class="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                    Proyecto</th>
+                                <th
+                                    class="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                    Responsable</th>
+                                <th
+                                    class="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                    Estado</th>
+                                <th
+                                    class="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                    Nota Técnica</th>
+                            </tr>
+                        </thead>
+                        <tbody id="kpi-table-body" class="bg-white divide-y divide-gray-50">
+                            <!-- JS Inject -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Cronograma e Hitos -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                <div class="bg-white shadow-lg rounded-2xl p-8 border border-gray-100">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+                        <span class="w-2 h-8 odoo-teal-bg rounded-full"></span>
+                        Planificación Semanal
+                    </h2>
+                    <p class="text-sm text-gray-500 mb-6 italic">Detalle diario del soporte presencial y remoto para
+                        asegurar los despliegues de la semana actual.</p>
+                    <ul class="space-y-4" id="weekly-plan-list">
+                        <!-- JS Inject -->
+                    </ul>
+                </div>
+
+                <div class="bg-white shadow-lg rounded-2xl p-8 border border-gray-100">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Línea de Tiempo Mensual</h2>
+                    <p class="text-sm text-gray-500 mb-8 italic">Visualización tipo Gantt de los hitos principales de
+                        Mayo. Pasa el cursor sobre las barras para ver detalles.</p>
+
+                    <div class="gantt-grid mb-4 border-b border-gray-100 pb-2">
+                        <div></div>
+                        <div class="gantt-header">01</div>
+                        <div class="gantt-header">04</div>
+                        <div class="gantt-header">07</div>
+                        <div class="gantt-header">10</div>
+                        <div class="gantt-header">13</div>
+                        <div class="gantt-header">16</div>
+                        <div class="gantt-header">19</div>
+                        <div class="gantt-header">22</div>
+                        <div class="gantt-header">25</div>
+                        <div class="gantt-header">28</div>
+                        <div class="gantt-header">31</div>
+                    </div>
+
+                    <div class="space-y-4" id="gantt-container">
+                        <!-- CSS Grid Gantt -->
+                        <div class="gantt-grid items-center group">
+                            <span class="text-xs font-bold text-gray-600">Sycom</span>
+                            <div
+                                class="col-span-2 bg-gray-200 h-8 rounded-lg flex items-center px-3 text-[10px] font-bold text-gray-500 relative transition-transform group-hover:scale-[1.02]">
+                                📊 DECISIÓN
+                                <div
+                                    class="absolute -right-2 w-4 h-4 bg-red-500 rounded-full border-2 border-white animate-pulse">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="gantt-grid items-center group">
+                            <span class="text-xs font-bold text-gray-600">Super</span>
+                            <div
+                                class="col-span-2 odoo-purple-bg h-8 rounded-lg flex items-center px-3 text-[10px] font-bold text-white relative transition-transform group-hover:scale-[1.02]">
+                                🚀 GO-LIVE
+                            </div>
+                        </div>
+                        <div class="gantt-grid items-center group">
+                            <span class="text-xs font-bold text-gray-600">Cahosa</span>
+                            <div
+                                class="col-span-2 odoo-purple-bg h-8 rounded-lg flex items-center px-3 text-[10px] font-bold text-white relative transition-transform group-hover:scale-[1.02]">
+                                🚀 GO-LIVE
+                            </div>
+                        </div>
+                        <div class="gantt-grid items-center group">
+                            <span class="text-xs font-bold text-gray-600">Plásticos</span>
+                            <div
+                                class="col-start-3 col-span-3 odoo-teal-bg h-8 rounded-lg flex items-center px-3 text-[10px] font-bold text-white relative transition-transform group-hover:scale-[1.02]">
+                                🐍 PYTHON DEV
+                            </div>
+                        </div>
+                        <div class="gantt-grid items-center group">
+                            <span class="text-xs font-bold text-gray-600">EmsoInd</span>
+                            <div
+                                class="col-start-4 col-span-7 bg-yellow-400 h-8 rounded-lg flex items-center px-3 text-[10px] font-bold text-yellow-900 relative transition-transform group-hover:scale-[1.02]">
+                                📦 MIGRACIÓN
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 2: CARGA DE EQUIPO -->
+        <div id="view-equipo" class="view-section hidden animate-in fade-in duration-500">
+            <header class="mb-10 text-center">
+                <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">Análisis de Capacidad</h1>
+                <p class="text-gray-600 mt-3 text-lg mx-auto max-w-2xl">
+                    Monitoreamos la carga de trabajo de cada líder técnico para evitar el agotamiento y asegurar que los
+                    proyectos críticos tengan la supervisión necesaria.
+                </p>
+            </header>
+
+            <div class="bg-white shadow-xl rounded-2xl p-10 mb-12 border border-gray-100">
+                <h2 class="text-xl font-bold text-gray-800 mb-8 text-center uppercase tracking-widest">Distribución de
+                    Proyectos (Actuales vs Backlog)</h2>
+                <div class="chart-container">
+                    <canvas id="workloadChart"></canvas>
+                </div>
+                <p class="mt-6 text-xs text-gray-400 text-center italic">Este gráfico compara la carga inmediata
+                    (púrpura) contra la demanda futura (turquesa).</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8" id="team-cards-container">
+                <!-- JS Inject -->
+            </div>
+        </div>
+
+        <!-- SECCIÓN 3: ESTRATEGIA -->
+        <div id="view-estrategia" class="view-section hidden animate-in fade-in duration-500">
+            <header class="mb-10">
+                <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">Estrategia Operativa & Backlog</h1>
+                <p class="text-gray-600 mt-3 text-lg">
+                    Planificación prospectiva de los proyectos en cola y recomendaciones tácticas del PMO para mitigar
+                    riesgos derivados de la saturación técnica.
+                </p>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                <div
+                    class="lg:col-span-2 bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100 flex flex-col">
+                    <div class="px-8 py-6 bg-gradient-to-r from-[#01A4A5] to-[#018e8f]">
+                        <h2 class="text-xl font-extrabold text-white">Hoja de Ruta (Cola de Proyectos)</h2>
+                        <p class="text-teal-50 text-xs mt-1">Proyectos pendientes de asignación oficial de recursos.</p>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-100">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th
+                                        class="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                        Proyecto</th>
+                                    <th
+                                        class="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                        Líder Previsto</th>
+                                    <th
+                                        class="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                        Ventana de Inicio</th>
+                                </tr>
+                            </thead>
+                            <tbody id="backlog-table-body" class="bg-white divide-y divide-gray-50">
+                                <!-- JS Inject -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-white shadow-xl rounded-2xl p-8 border-t-8 border-[#714B67] flex flex-col h-full">
+                    <h2 class="text-xl font-extrabold text-gray-800 mb-8 border-b pb-4">Decisiones del PMO</h2>
+                    <div class="space-y-8 flex-grow">
+                        <div class="relative pl-10">
+                            <div
+                                class="absolute left-0 top-0 w-8 h-8 rounded-full odoo-purple-bg flex items-center justify-center text-white font-bold text-sm">
+                                1</div>
+                            <h4 class="font-bold text-gray-900 text-sm">Sala de Guerra (Lunes 4)</h4>
+                            <p class="text-xs text-gray-500 mt-2 leading-relaxed">Conexión mandatoria de 8:00 AM a 12:00
+                                PM para supervisar los tres hitos críticos simultáneos.</p>
+                        </div>
+                        <div class="relative pl-10">
+                            <div
+                                class="absolute left-0 top-0 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm">
+                                2</div>
+                            <h4 class="font-bold text-gray-900 text-sm">Code Freeze Parcial</h4>
+                            <p class="text-xs text-gray-500 mt-2 leading-relaxed">Proyectos Plásticos y EmsoInd no
+                                desplegarán cambios en producción hoy para estabilizar infraestructura.</p>
+                        </div>
+                        <div class="relative pl-10">
+                            <div
+                                class="absolute left-0 top-0 w-8 h-8 rounded-full odoo-teal-bg flex items-center justify-center text-white font-bold text-sm">
+                                3</div>
+                            <h4 class="font-bold text-gray-900 text-sm">Auditoría Python PEP8</h4>
+                            <p class="text-xs text-gray-500 mt-2 leading-relaxed">Gilberto Salguero debe certificar la
+                                calidad del código de Plásticos antes del miércoles 6.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-white border-t border-gray-100 py-8 text-center">
+        <p class="text-[10px] font-bold text-gray-400 tracking-widest uppercase">Kenocia PMO Dashboard © 2026 |
+            Desarrollado para Operaciones Odoo</p>
+    </footer>
+
+    <script>
+        const projectsData = [
+            { name: "Sycom", phase: "Evaluación", leader: "Jorge Urbina", status: "Crítico", note: "Decisión de Go-Live pendiente hoy." },
+            { name: "Super", phase: "Despliegue", leader: "Luis Beteta", status: "Crítico", note: "Soporte presencial en sitio." },
+            { name: "Cahosa", phase: "Validación", leader: "Cezar Munguía", status: "Crítico", note: "Pruebas de estrés finales." },
+            { name: "Plásticos", phase: "Desarrollo", leader: "Gilberto Salguero", status: "En Proceso", note: "Integración de módulos Python." },
+            { name: "EmsoInd", phase: "Configuración", leader: "Luis Beteta", status: "En Proceso", note: "Migración de inventarios base." }
+        ];
+
+        const weeklyPlan = [
+            { day: "Lunes 04", act: "🚀 GO-LIVE: Super & Cahosa", mode: "Presencial", resp: "Luis B. / Cezar M.", critical: true },
+            { day: "Martes 05", act: "Estabilización Post-Salida", mode: "Remoto", resp: "Luis B. / Cezar M.", critical: false },
+            { day: "Miércoles 06", act: "Review de Código Python", mode: "Remoto", resp: "Gilberto S.", critical: false },
+            { day: "Jueves 07", act: "Arranque Fase Plásticos", mode: "Presencial", resp: "Gilberto S.", critical: true }
+        ];
+
+        const teamData = [
+            { name: "Jorge Urbina", active: 1, future: 1, status: "ÓPTIMO", detail: "Enfoque exclusivo en Sycom.", alert: false },
+            { name: "Luis Beteta", active: 2, future: 1, status: "SATURADO", detail: "Go-Live + EmsoInd. Riesgo de burnout.", alert: true },
+            { name: "Cezar Munguía", active: 1, future: 2, status: "SOBRECARGADO", detail: "Preventa Marvisa compromete soporte.", alert: true },
+            { name: "Gilberto Salguero", active: 1, future: 0, status: "EN FOCO", detail: "Concentrado en desarrollo Python.", alert: false }
+        ];
+
+        const backlogData = [
+            { name: "Marvisa", leader: "Cezar Munguía", window: "Semana 3 - Mayo" },
+            { name: "911", leader: "Jorge Urbina", window: "Semana 4 - Mayo" },
+            { name: "TMS", leader: "Luis Beteta", window: "Junio 2026" }
+        ];
+
+        let workloadChartInstance = null;
+
+        function filterTable(status) {
+            const tbody = document.getElementById('kpi-table-body');
+            tbody.innerHTML = '';
+            projectsData.forEach(p => {
+                if (status === 'all' || p.status === status) {
+                    const tr = document.createElement('tr');
+                    const badgeClass = p.status === 'Crítico' ? 'text-red-700 bg-red-50' : 'text-yellow-700 bg-yellow-50';
+                    tr.innerHTML = `
+                        <td class="px-8 py-5 text-sm font-black text-gray-900">${p.name}</td>
+                        <td class="px-8 py-5 text-xs text-gray-600 font-bold">👤 ${p.leader}</td>
+                        <td class="px-8 py-5">
+                            <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase ${badgeClass}">${p.status}</span>
+                        </td>
+                        <td class="px-8 py-5 text-xs text-gray-400 italic">${p.note}</td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+            });
+        }
+
+        function initApp() {
+            filterTable('all');
+
+            // Render Plan Semanal
+            const planList = document.getElementById('weekly-plan-list');
+            weeklyPlan.forEach(item => {
+                const li = document.createElement('li');
+                li.className = `flex items-center gap-4 p-4 rounded-xl border-l-4 ${item.critical ? 'border-[#01A4A5] bg-teal-50/30' : 'border-gray-200 bg-gray-50/50'}`;
+                li.innerHTML = `
+                    <div class="text-[10px] font-black text-[#714B67] w-16">${item.day}</div>
+                    <div class="flex-grow">
+                        <p class="text-sm font-bold text-gray-900">${item.act}</p>
+                        <p class="text-[10px] text-gray-400 font-bold uppercase mt-1">${item.resp} • ${item.mode}</p>
+                    </div>
+                `;
+                planList.appendChild(li);
+            });
+
+            // Render Team Cards
+            const teamContainer = document.getElementById('team-cards-container');
+            teamData.forEach(member => {
+                const div = document.createElement('div');
+                div.className = `bg-white p-8 rounded-2xl shadow-sm border-2 ${member.alert ? 'border-red-100' : 'border-gray-50'}`;
+                div.innerHTML = `
+                    <div class="flex justify-between items-start mb-6">
+                        <h4 class="text-lg font-black text-gray-900">👤 ${member.name}</h4>
+                        <span class="text-[9px] font-black px-2 py-1 rounded ${member.alert ? 'bg-red-500 text-white' : 'bg-green-500 text-white'}">${member.status}</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="p-4 bg-gray-50 rounded-xl text-center">
+                            <span class="block text-[10px] text-gray-400 font-bold uppercase">Activos</span>
+                            <span class="text-2xl font-black odoo-purple">${member.active}</span>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-xl text-center">
+                            <span class="block text-[10px] text-gray-400 font-bold uppercase">Futuros</span>
+                            <span class="text-2xl font-black odoo-teal">${member.future}</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 italic">${member.detail}</p>
+                `;
+                teamContainer.appendChild(div);
+            });
+
+            // Render Backlog
+            const backlogBody = document.getElementById('backlog-table-body');
+            backlogData.forEach(b => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="px-8 py-5 text-sm font-bold text-gray-800">${b.name}</td>
+                    <td class="px-8 py-5 text-xs text-gray-500 font-bold">👤 ${b.leader}</td>
+                    <td class="px-8 py-5 text-xs text-odoo-teal font-black">${b.window}</td>
+                `;
+                backlogBody.appendChild(tr);
+            });
+        }
+
+        function initChart() {
+            if (workloadChartInstance) return;
+            const ctx = document.getElementById('workloadChart').getContext('2d');
+            workloadChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: teamData.map(d => d.name),
+                    datasets: [
+                        {
+                            label: 'Proyectos Activos',
+                            data: teamData.map(d => d.active),
+                            backgroundColor: '#714B67',
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Backlog Previsto',
+                            data: teamData.map(d => d.future),
+                            backgroundColor: '#01A4A5',
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1, font: { weight: 'bold' } } },
+                        x: { grid: { display: false }, ticks: { font: { weight: 'bold' } } }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { size: 10, weight: 'bold' }, padding: 20 } }
+                    }
+                }
+            });
+        }
+
+        function nav(section) {
+            document.querySelectorAll('.view-section').forEach(v => v.classList.add('hidden'));
+            document.querySelectorAll('.nav-btn').forEach(b => {
+                b.classList.remove('odoo-purple-bg', 'text-white', 'shadow-md');
+                b.classList.add('text-gray-500', 'hover:bg-gray-50');
+            });
+
+            document.getElementById('view-' + section).classList.remove('hidden');
+            const activeBtn = document.getElementById('btn-' + section);
+            activeBtn.classList.remove('text-gray-500', 'hover:bg-gray-50');
+            activeBtn.classList.add('odoo-purple-bg', 'text-white', 'shadow-md');
+
+            if (section === 'equipo') setTimeout(initChart, 100);
+        }
+
+        window.onload = initApp;
+    </script>
+</body>
+
+</html>
