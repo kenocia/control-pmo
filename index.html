@@ -51,8 +51,8 @@
         }
     </style>
     <!-- Chosen Palette: Odoo Harmony (Plum #714B67, Teal #01A4A5, Warm Neutral Background #fcfaf8) -->
-    <!-- Application Structure Plan: He expandido la arquitectura para incluir una cuarta sección de "Gestión Comercial". Esta vista está diseñada como un tablero de "Pipeline y Pipeline" que separa las tareas preventa de las de mantenimiento/soporte comercial. Esto permite a Jorge Urbina separar mentalmente su carga de PMO técnico de su rol consultivo comercial. -->
-    <!-- Visualization & Content Choices: 1. Nav: Cuarto botón añadido. 2. Comercial: Grid de tarjetas con iconos Unicode para representar tipos de actividad (Cierre, Reunión, Soporte). 3. Datos: Mantenemos la integridad de los proyectos Odoo mientras inyectamos el backlog comercial. -->
+    <!-- Application Structure Plan: He expandido la arquitectura para incluir una cuarta sección de "Gestión Comercial". Esta vista está diseñada como un tablero de "Pipeline y Pipeline" que separa las tareas preventa de las de mantenimiento/soporte comercial. Se ha añadido lógica de estado (JS) para permitir marcar tareas como completadas, lo que mejora la utilidad de la SPA como herramienta de gestión diaria para Jorge Urbina. -->
+    <!-- Visualization & Content Choices: 1. Nav: Cuarto botón añadido. 2. Comercial: Grid de tarjetas interactivas con estados de completado. 3. Interactividad: Botones de check mediante Vanilla JS que disparan el re-renderizado de la sección comercial sin afectar el resto del DOM. -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
 </head>
 <body class="antialiased min-h-screen flex flex-col">
@@ -216,7 +216,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8" id="team-cards-container"></div>
         </div>
 
-        <!-- SECCIÓN 3: GESTIÓN COMERCIAL (NUEVA) -->
+        <!-- SECCIÓN 3: GESTIÓN COMERCIAL -->
         <div id="view-comercial" class="view-section hidden animate-fade-in">
             <header class="mb-10">
                 <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">Gestión Comercial y Preventa</h1>
@@ -244,9 +244,14 @@
             </div>
 
             <div class="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
-                <div class="px-8 py-5 border-b border-gray-100 bg-gray-50/50">
-                    <h2 class="text-xl font-extrabold text-gray-800">Pipeline de Actividades Comerciales</h2>
-                    <p class="text-xs text-gray-500">Gestión de oportunidades y servicios post-venta.</p>
+                <div class="px-8 py-5 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-extrabold text-gray-800">Pipeline de Actividades Comerciales</h2>
+                        <p class="text-xs text-gray-500">Haz clic en el check para marcar una tarea como completada.</p>
+                    </div>
+                    <div id="commercial-stats" class="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                        <!-- Stats Inject -->
+                    </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0 divide-x divide-y divide-gray-100" id="commercial-grid">
                     <!-- JS Inject de Actividades Comerciales -->
@@ -291,7 +296,7 @@
                         <div class="relative pl-10">
                             <div class="absolute left-0 top-0 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm">2</div>
                             <h4 class="font-bold text-gray-900 text-sm">Carga Dual Jorge</h4>
-                            <p class="text-xs text-gray-500 mt-2">Jorge debe balancear el soporte en Cahosa con el pipeline comercial activo (9 actividades).</p>
+                            <p class="text-xs text-gray-500 mt-2">Jorge debe balancear el soporte en Cahosa con el pipeline comercial activo.</p>
                         </div>
                     </div>
                 </div>
@@ -314,15 +319,15 @@
         ];
 
         const commercialData = [
-            { title: "Cierre de venta Marvisa", type: "Venta", icon: "💰", priority: "Alta" },
-            { title: "Reunión Alimentos de Cortés", type: "Consultoría", icon: "📱", priority: "Alta", detail: "Apps móviles" },
-            { title: "Auditoría Comegcen (Cenosa)", type: "Auditoría", icon: "🔍", priority: "Media" },
-            { title: "Sitio Web Comegcen (Cenosa)", type: "Web", icon: "🌐", priority: "Media" },
-            { title: "Codisa Soporte técnico", type: "Mantenimiento", icon: "🛠️", priority: "Media", detail: "Software" },
-            { title: "Seguimiento ENEE", type: "Inventario", icon: "⚡", priority: "Baja", detail: "Mantenimiento" },
-            { title: "Emsoind Soporte técnico", type: "Soporte", icon: "👨‍💻", priority: "Baja" },
-            { title: "DDP Fefasa", type: "Gestión", icon: "📝", priority: "Media" },
-            { title: "Enviar propuestas", type: "Preventa", icon: "📤", priority: "Alta" }
+            { title: "Cierre de venta Marvisa", type: "Venta", icon: "💰", priority: "Alta", completed: false },
+            { title: "Reunión Alimentos de Cortés", type: "Consultoría", icon: "📱", priority: "Alta", detail: "Apps móviles", completed: false },
+            { title: "Auditoría Comegcen (Cenosa)", type: "Auditoría", icon: "🔍", priority: "Media", completed: false },
+            { title: "Sitio Web Comegcen (Cenosa)", type: "Web", icon: "🌐", priority: "Media", completed: false },
+            { title: "Codisa Soporte técnico", type: "Mantenimiento", icon: "🛠️", priority: "Media", detail: "Software", completed: false },
+            { title: "Seguimiento ENEE", type: "Inventario", icon: "⚡", priority: "Baja", detail: "Mantenimiento", completed: false },
+            { title: "Emsoind Soporte técnico", type: "Soporte", icon: "👨‍💻", priority: "Baja", completed: false },
+            { title: "DDP Fefasa", type: "Gestión", icon: "📝", priority: "Media", completed: false },
+            { title: "Enviar propuestas", type: "Preventa", icon: "📤", priority: "Alta", completed: false }
         ];
 
         const weeklyPlan = [
@@ -334,7 +339,7 @@
 
         const teamData = [
             { name: "Luis Beteta", active: 4, future: 1, status: "CRÍTICO", detail: "80% de carga activa.", alert: true },
-            { name: "Jorge Urbina", active: 2, future: 1, status: "DUAL", detail: "Consultor PMO + 9 actividades comerciales.", alert: false },
+            { name: "Jorge Urbina", active: 2, future: 1, status: "DUAL", detail: "Consultor PMO + Gestión Comercial.", alert: false },
             { name: "Gilberto Salguero", active: 2, future: 0, status: "ALTA CARGA", detail: "Foco en Python Dev.", alert: false },
             { name: "Cezar Munguía", active: 1, future: 2, status: "ESTABLE", detail: "Foco en Super.", alert: false }
         ];
@@ -365,24 +370,40 @@
             });
         }
 
+        function toggleCommercialTask(index) {
+            commercialData[index].completed = !commercialData[index].completed;
+            renderCommercial();
+        }
+
         function renderCommercial() {
             const grid = document.getElementById('commercial-grid');
+            const stats = document.getElementById('commercial-stats');
             grid.innerHTML = '';
-            commercialData.forEach(item => {
+            
+            const completedCount = commercialData.filter(item => item.completed).length;
+            stats.innerText = `${completedCount} / ${commercialData.length} completadas`;
+
+            commercialData.forEach((item, index) => {
                 const div = document.createElement('div');
-                div.className = "p-8 hover:bg-gray-50 transition-colors flex flex-col justify-between h-full group";
+                div.className = `p-8 hover:bg-gray-50 transition-all flex flex-col justify-between h-full group relative ${item.completed ? 'bg-gray-50/50 grayscale-[0.5]' : ''}`;
+                
                 div.innerHTML = `
-                    <div>
+                    <div class="${item.completed ? 'opacity-40' : ''}">
                         <div class="flex justify-between items-start mb-4">
                             <span class="text-3xl">${item.icon}</span>
                             <span class="text-[8px] font-black px-2 py-0.5 rounded uppercase ${item.priority === 'Alta' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}">${item.priority}</span>
                         </div>
-                        <h4 class="text-sm font-bold text-gray-900 group-hover:odoo-purple transition-colors">${item.title}</h4>
+                        <h4 class="text-sm font-bold text-gray-900 group-hover:odoo-purple transition-colors ${item.completed ? 'line-through decoration-2' : ''}">${item.title}</h4>
                         <p class="text-[10px] text-gray-400 font-bold uppercase mt-1 tracking-wider">${item.type} ${item.detail ? '• ' + item.detail : ''}</p>
                     </div>
-                    <div class="mt-6 flex items-center gap-1">
-                        <div class="w-2 h-2 rounded-full odoo-teal-bg"></div>
-                        <span class="text-[9px] font-bold text-gray-400">Estado: Pendiente</span>
+                    <div class="mt-6 flex justify-between items-center">
+                        <div class="flex items-center gap-1">
+                            <div class="w-2 h-2 rounded-full ${item.completed ? 'bg-green-500' : 'odoo-teal-bg'}"></div>
+                            <span class="text-[9px] font-bold text-gray-400">${item.completed ? 'Completado' : 'Pendiente'}</span>
+                        </div>
+                        <button onclick="toggleCommercialTask(${index})" class="w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${item.completed ? 'bg-green-500 border-green-500 text-white shadow-lg' : 'border-gray-200 text-gray-300 hover:border-green-500 hover:text-green-500'}">
+                            ✔
+                        </button>
                     </div>
                 `;
                 grid.appendChild(div);
